@@ -110,9 +110,9 @@ contract RockPaperScissors {
     }
     
     /**
-     * Consturctor
+     * constructor
      */
-    function RockPaperScissors() public
+    constructor() public
     {
         owner = msg.sender;
     }
@@ -146,7 +146,7 @@ contract RockPaperScissors {
         uint gameId = numberOfGames;
         listOfGames[gameId] = newGame;
         activeGamesIdList.push(gameId);
-        WaitingForPlayerToJoin(gameId);
+        emit WaitingForPlayerToJoin(gameId);
         numberOfGames++;
         return gameId;
     }
@@ -172,7 +172,7 @@ contract RockPaperScissors {
         // Change game state
         game.gameState = 1;
         
-        PlayerJoinedEvent(gameId);
+        emit PlayerJoinedEvent(gameId);
     }
     
     function reveal(uint gameId, uint8 _choice, string _salt) public gameExists(gameId) atGameStateNeedToReveal(gameId) onlyByPlayer1(gameId)
@@ -183,7 +183,7 @@ contract RockPaperScissors {
         require(isValidChoiceValue(_choice));
         
         // verify user hashed choice and real choice
-        require(sha256(_choice, _salt) == game.choiceHash);
+        require(sha256(abi.encodePacked(_choice, _salt)) == game.choiceHash);
         
         game.winner = chooseWinner(_choice, game.player2Choice);
         
@@ -208,7 +208,7 @@ contract RockPaperScissors {
 
         game.gameState = 2;
         deleteFromActiveGames(gameId);
-        GameEndEvent(gameId);
+        emit GameEndEvent(gameId);
     }
     
     function chooseWinner(uint8 _p1Choice, uint8 _p2Choice) internal pure returns (uint8)
@@ -244,7 +244,7 @@ contract RockPaperScissors {
     // It won't be stored on the blockchain
     function getChoiceHash(uint8 _choice, string _salt) public pure returns(bytes32)
     {
-        return sha256(_choice, _salt);
+        return sha256(abi.encodePacked(_choice, _salt));
     }
     
     // Player1 choose not to reveal. It could be useful if player1 lost the salt.
@@ -259,7 +259,7 @@ contract RockPaperScissors {
         game.player1.transfer(player1Share);
         game.gameState = 2;
         deleteFromActiveGames(gameId);
-        GameEndEvent(gameId);
+        emit GameEndEvent(gameId);
     }
     
     // Give back player2's money
@@ -271,7 +271,7 @@ contract RockPaperScissors {
         game.player2.transfer(game.prize);
         game.gameState = 0;
         delete(game.player2);
-        WaitingForPlayerToJoin(gameId);
+        emit WaitingForPlayerToJoin(gameId);
     }
     
     // No player2 ATM so player1 can delete the game.
@@ -282,7 +282,7 @@ contract RockPaperScissors {
         game.player1.transfer(game.deposit);
         game.gameState = 3; // deleted
         deleteFromActiveGames(gameId);
-        DeletedEvent(gameId);
+        emit DeletedEvent(gameId);
     }
     
     function getNumberOfActiveGames() public view returns(uint)
